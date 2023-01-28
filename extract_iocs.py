@@ -118,6 +118,8 @@ def ioc_extraction(page_content : str, req_url : str):
         # cleanup broken IPs
         if '[.]' in ipv4:
             ipv4 = re.sub('\[.\]', '.', ipv4)
+        if 'http' in ipv4:
+            continue
         if ipv4 not in ioc_payload['ipv4']:
             #print(ipv4)
             ioc_payload['ipv4'].append(ipv4)
