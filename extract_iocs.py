@@ -44,6 +44,13 @@ def dump_file(iocs : dict, url : str):
     with open(fname, 'w') as f:
         f.write('Scan: {}'.format(url))
         f.write('\n\n')
+        f.write(50*"#")
+        f.write('\n')
+        f.write('# MASTER EQL QUERY \n')
+        f.write(50*"#")
+        f.write('\n\n')
+        f.write(iocs['master_query'])
+        f.write('\n\n')
         for ioc_key in iocs.keys():
             if ioc_key == 'queries' or ioc_key == 'master_query':
                 continue
@@ -57,12 +64,6 @@ def dump_file(iocs : dict, url : str):
             f.write('\n\n')
             f.write('EQL: {}'.format(iocs['queries'][ioc_key]))
             f.write('\n\n')
-        f.write(50*"#")
-        f.write('\n')
-        f.write('# MASTER EQL QUERY \n')
-        f.write(50*"#")
-        f.write('\n\n')
-        f.write(iocs['master_query'])
 
 
 def scan_webpage(page_content : str):
