@@ -11,6 +11,7 @@ Overview:
 Known Limitations:
     * Will really only work on OSINT feeds 
     * Has trouble working with encoded PDFs, so just try to hit HTML
+    * Hitting CISA endpoints seems to take a little while, not sure why...
 
 Libraries:
     * iocextract
@@ -23,3 +24,5 @@ Example URLs to try:
     * https://unit42.paloaltonetworks.com/emotet-malware-summary-epoch-4-5/
     * https://www.cisa.gov/uscert/ncas/alerts/aa21-048a
     * https://www.cybereason.com/blog/research/back-to-the-future-inside-the-kimsuky-kgh-spyware-suite
+    * https://www.cisa.gov/uscert/ncas/alerts/aa20-302a
+    * https://unit42.paloaltonetworks.com/scarlet-mimic-years-long-espionage-targets-minority-activists/

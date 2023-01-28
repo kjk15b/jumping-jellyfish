@@ -7,6 +7,7 @@ import json
 import uuid
 import datetime
 import os
+from urllib.parse import urlparse
 
 filtered_tags = [
     'script',
@@ -44,6 +45,8 @@ def dump_file(iocs : dict, url : str):
         f.write('Scan: {}'.format(url))
         f.write('\n\n')
         for ioc_key in iocs.keys():
+            if ioc_key == 'queries':
+                continue
             f.write(50*"#")
             f.write('\n')
             f.write('# {}\n'.format(ioc_key))
@@ -51,6 +54,8 @@ def dump_file(iocs : dict, url : str):
             f.write('\n\n')
             for ioc in iocs[ioc_key]:
                 f.write('{}\n'.format(ioc))
+            f.write('\n\n')
+            f.write('EQL: {}'.format(iocs['queries'][ioc_key]))
             f.write('\n\n')
 
 
@@ -66,6 +71,49 @@ def scan_webpage(page_content : str):
             soup_str += ' {} '.format(tag.text)
 
     return soup_str
+
+def generate_eql_queries(iocs : dict):
+    '''
+    attempt to generate eql from extracted iocs
+    EXCLUDES emails for right now
+    '''
+    queries = {}
+    for ioc_key in iocs.keys():
+        query_str = '('
+        if ioc_key == 'sha256':
+            query_str = 'file.hash.sha256:('
+        elif ioc_key == 'sha1':
+            query_str = 'file.hash.sha1:('
+        elif ioc_key == 'sha512':
+            query_str = 'file.hash.sha512:('
+        elif ioc_key == 'md5':
+            query_str = 'file.hash.md5:('
+        elif ioc_key == 'ipv4':
+            query_str = 'destination.ip:('
+        elif ioc_key == 'urls':
+            query_str = 'destination.domain:('
+        if ioc_key == 'urls':
+            parsed_domains = []
+            for url in iocs[ioc_key]:
+                if urlparse(url).netloc != '':
+                    parsed_domains.append(urlparse(url).netloc)
+
+            for i in range(len(parsed_domains)):
+                if i == len(parsed_domains) - 1:
+                    query_str += '"{}"'.format(parsed_domains[i])
+                else:
+                    query_str += '"{}" OR '.format(parsed_domains[i])
+
+        else:
+            for i in range(len(iocs[ioc_key])):
+                if i == len(iocs[ioc_key]) - 1:
+                    query_str += '"{}"'.format(iocs[ioc_key][i])
+                else:
+                    query_str += '"{}" OR '.format(iocs[ioc_key][i])
+        query_str += ')'
+        queries[ioc_key] = query_str
+
+    return queries
 
 def ioc_extraction(page_content : str, req_url : str):
     '''
@@ -97,9 +145,11 @@ def ioc_extraction(page_content : str, req_url : str):
     }
     for url in iocextract.extract_urls(page_content):
         # re.match / search to filter out url noise from request domain
-        if re.match(req_url, url):
+        if re.match(urlparse(req_url).netloc, urlparse(url).netloc):
+            print("Found a match, skipping")
             continue
-        if re.search(req_url, url):
+        if re.search(urlparse(req_url).netloc, urlparse(url).netloc):
+            print("Found a matching search, skipping")
             continue
         if re.search(domain_0, url):
             continue
@@ -112,6 +162,7 @@ def ioc_extraction(page_content : str, req_url : str):
             url = re.sub('hxxp', 'http', url)
         if url not in ioc_payload['urls']:
             #print(url)
+            #print(urlparse(url).netloc)
             ioc_payload['urls'].append(url)
 
     for ipv4 in iocextract.extract_ipv4s(page_content):
@@ -155,11 +206,25 @@ def ioc_extraction(page_content : str, req_url : str):
             email = re.sub('\(at\)', '@', email)
         if '[.]' in email:
             email = re.sub('\[.\]', '.', email)
+        if 'at ' in email:
+            email = re.sub('at ', '', email)
+        if 'mailing-lists-and-feeds  ' in email:
+            email = re.sub('mailing-lists-and-feeds  ', '', email)
+        if 'hc3  ' in email:
+            email = re.sub('hc3  ', '', email)
+        if 'via ' in email:
+            email = re.sub('via ', '', email)
+        if 'field  ' in email:
+            email = re.sub('field  ', '', email)
+        if 'email ' in email:
+            email = re.sub('email ', '', email)
+        if 'server hosted' in email:
+            continue
         if email not in ioc_payload['email']:
             #print(email)
             ioc_payload['email'].append(email)
 
-    print(json.dumps(ioc_payload, indent=3))
+    #print(json.dumps(ioc_payload, indent=3))
     return ioc_payload
 
 def fetch_url(url : str):
@@ -171,6 +236,8 @@ def fetch_url(url : str):
     if req.status_code == 200:
         proc_page = scan_webpage(req.content)
         iocs = ioc_extraction(proc_page, url)
+        iocs['queries'] = generate_eql_queries(iocs)
+        print(json.dumps(iocs, indent=3))
         dump_file(iocs, url)
     else:
         print('error processing request: {}'.format(url))
