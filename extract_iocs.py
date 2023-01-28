@@ -14,6 +14,26 @@ filtered_tags = [
     'link'
 ]
 
+general_suffixes = [
+    '.com',
+    '.edu',
+    '.gov',
+    '.org',
+    '.mil',
+    '.net',
+    '.au', # Australia
+    '.in', # India
+    '.br', # Brazil
+    '.it', # Italy
+    '.ca', # Canada
+    '.mx', # Mexico
+    '.fr', # France
+    '.tw', # Tawain
+    '.il', # Israel
+    '.uk', #United Kingdom
+]
+
+
 def dump_file(iocs : dict, url : str):
     '''
     Dump scan results to txt file on disk with UUID and timestamp
@@ -45,7 +65,6 @@ def scan_webpage(page_content : str):
         if tag.name not in filtered_tags:
             soup_str += ' {} '.format(tag.text)
 
-    #print(soup_str)
     return soup_str
 
 def ioc_extraction(page_content : str, req_url : str):
@@ -53,6 +72,19 @@ def ioc_extraction(page_content : str, req_url : str):
     Loop over iocextraction values, try to find IOCs
     return JSON IOCs payload
     '''
+    domain_0 = ''
+    domain_1 = ''
+    # Attempt to filter out noise of links from the same domain requested
+    if 'https' in req_url:
+        split_url = req_url.replace('https://', '').split('.')
+        domain_0 = split_url[0]
+        domain_1 = split_url[1]
+    elif 'http' in req_url:
+        split_url = req_url.replace('http://', '').split('.')
+        domain_0 = split_url[0]
+        domain_1 = split_url[1]
+
+
     ioc_payload = {
         'urls'   : [],
         'ipv4'   : [],
@@ -64,10 +96,16 @@ def ioc_extraction(page_content : str, req_url : str):
         'email'  : []
     }
     for url in iocextract.extract_urls(page_content):
+        # re.match / search to filter out url noise from request domain
         if re.match(req_url, url):
             continue
         if re.search(req_url, url):
             continue
+        if re.search(domain_0, url):
+            continue
+        if re.search(domain_1, url):
+            continue
+        # cleanup broken links
         if '[.]' in url:
             url = re.sub('\[.\]', '.', url)
         if 'hxxp' in url:
@@ -77,6 +115,9 @@ def ioc_extraction(page_content : str, req_url : str):
             ioc_payload['urls'].append(url)
 
     for ipv4 in iocextract.extract_ipv4s(page_content):
+        # cleanup broken IPs
+        if '[.]' in ipv4:
+            ipv4 = re.sub('\[.\]', '.', ipv4)
         if ipv4 not in ioc_payload['ipv4']:
             #print(ipv4)
             ioc_payload['ipv4'].append(ipv4)
@@ -107,6 +148,7 @@ def ioc_extraction(page_content : str, req_url : str):
             ioc_payload['sha512'].append(sha512)
 
     for email in iocextract.extract_emails(page_content):
+        # cleanup broken emails
         if '(at)' in email:
             email = re.sub('\(at\)', '@', email)
         if '[.]' in email:
