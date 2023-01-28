@@ -66,8 +66,12 @@ def ioc_extraction(page_content : str, req_url : str):
     for url in iocextract.extract_urls(page_content):
         if re.match(req_url, url):
             continue
+        if re.search(req_url, url):
+            continue
         if '[.]' in url:
-                url = re.sub('\[.\]', '.', url)
+            url = re.sub('\[.\]', '.', url)
+        if 'hxxp' in url:
+            url = re.sub('hxxp', 'http', url)
         if url not in ioc_payload['urls']:
             #print(url)
             ioc_payload['urls'].append(url)
@@ -105,6 +109,8 @@ def ioc_extraction(page_content : str, req_url : str):
     for email in iocextract.extract_emails(page_content):
         if '(at)' in email:
             email = re.sub('\(at\)', '@', email)
+        if '[.]' in email:
+            email = re.sub('\[.\]', '.', email)
         if email not in ioc_payload['email']:
             #print(email)
             ioc_payload['email'].append(email)

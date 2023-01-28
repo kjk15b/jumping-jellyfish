@@ -15,3 +15,5 @@ Libraries:
 
 Example URLs to try:
     * https://blogs.blackberry.com/en/2022/11/romcom-spoofing-solarwinds-keepass
+    * https://blogs.blackberry.com/en/2023/01/emotet-returns-with-new-methods-of-evasion
+    * https://unit42.paloaltonetworks.com/emotet-malware-summary-epoch-4-5/
