@@ -45,7 +45,7 @@ def dump_file(iocs : dict, url : str):
         f.write('Scan: {}'.format(url))
         f.write('\n\n')
         for ioc_key in iocs.keys():
-            if ioc_key == 'queries':
+            if ioc_key == 'queries' or ioc_key == 'master_query':
                 continue
             f.write(50*"#")
             f.write('\n')
@@ -57,7 +57,12 @@ def dump_file(iocs : dict, url : str):
             f.write('\n\n')
             f.write('EQL: {}'.format(iocs['queries'][ioc_key]))
             f.write('\n\n')
-
+        f.write(50*"#")
+        f.write('\n')
+        f.write('# MASTER EQL QUERY \n')
+        f.write(50*"#")
+        f.write('\n\n')
+        f.write(iocs['master_query'])
 
 
 def scan_webpage(page_content : str):
@@ -71,6 +76,22 @@ def scan_webpage(page_content : str):
             soup_str += ' {} '.format(tag.text)
 
     return soup_str
+
+def generate_master_eql_query(iocs : dict):
+    master_query = '('
+    query_list = []
+    for query in iocs['queries'].keys():
+        if iocs['queries'][query] != '()':
+            query_list.append(iocs['queries'][query])
+
+    for i in range(len(query_list)):
+        if i == len(query_list) - 1:
+            master_query += '{}'.format(query_list[i])
+        else:
+            master_query += '{} OR '.format(query_list[i])
+
+    master_query += ')'
+    return master_query
 
 def generate_eql_queries(iocs : dict):
     '''
@@ -237,6 +258,7 @@ def fetch_url(url : str):
         proc_page = scan_webpage(req.content)
         iocs = ioc_extraction(proc_page, url)
         iocs['queries'] = generate_eql_queries(iocs)
+        iocs['master_query'] = generate_master_eql_query(iocs)
         print(json.dumps(iocs, indent=3))
         dump_file(iocs, url)
     else:
