@@ -1,2 +1,4 @@
 iocextract
 bs4
+pandas
+requests

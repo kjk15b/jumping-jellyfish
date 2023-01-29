@@ -15,7 +15,13 @@ Known Limitations:
 
 Libraries:
     * iocextract
+        - Scan for IOCs, some manual filtering for noise is still done post processing
     * bs4
+        - handle the HTML page, filter out noisy tags
+    * pandas
+        - convert IOC record into CSV format
+    * requests
+        - handle the request for a webpage
 
 
 Example URLs to try:
