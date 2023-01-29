@@ -35,12 +35,12 @@ general_suffixes = [
 ]
 
 
-def dump_file(iocs : dict, url : str):
+def dump_txt_file(iocs : dict, url : str):
     '''
     Dump scan results to txt file on disk with UUID and timestamp
     '''
     filename = '{}-{}.txt'.format(str(uuid.uuid4()), str(datetime.date.today()))
-    fname = os.path.join(os.getcwd(), 'processed/', filename)
+    fname = os.path.join(os.getcwd(), 'txt/', filename)
     with open(fname, 'w') as f:
         f.write('Scan: {}'.format(url))
         f.write('\n\n')
@@ -65,6 +65,12 @@ def dump_file(iocs : dict, url : str):
             f.write('EQL: {}'.format(iocs['queries'][ioc_key]))
             f.write('\n\n')
 
+def dump_json_file(iocs : dict, url : str):
+    filename = '{}-{}.json'.format(str(uuid.uuid4()), str(datetime.date.today()))
+    fname = os.path.join(os.getcwd(), 'json/', filename)
+    iocs['scan'] = url 
+    with open(fname, 'w') as f:
+        f.write(json.dumps(iocs, indent=3))
 
 def scan_webpage(page_content : str):
     '''
@@ -261,7 +267,8 @@ def fetch_url(url : str):
         iocs['queries'] = generate_eql_queries(iocs)
         iocs['master_query'] = generate_master_eql_query(iocs)
         print(json.dumps(iocs, indent=3))
-        dump_file(iocs, url)
+        dump_txt_file(iocs, url)
+        dump_json_file(iocs, url)
     else:
         print('error processing request: {}'.format(url))
 
