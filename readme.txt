@@ -26,3 +26,11 @@ Example URLs to try:
     * https://www.cybereason.com/blog/research/back-to-the-future-inside-the-kimsuky-kgh-spyware-suite
     * https://www.cisa.gov/uscert/ncas/alerts/aa20-302a
     * https://unit42.paloaltonetworks.com/scarlet-mimic-years-long-espionage-targets-minority-activists/
+
+
+
+Usage:
+    1. pip3 install -r requirements.txt
+    2. python3 extract_iocs.py <url_1> <url_2> <url_3>
+        * python3 extract_iocs.py https://blogs.blackberry.com/en/2022/11/romcom-spoofing-solarwinds-keepass
+    3. Output will be a timestamped text and JSON file
