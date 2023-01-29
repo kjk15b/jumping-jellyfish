@@ -8,6 +8,7 @@ import uuid
 import datetime
 import os
 from urllib.parse import urlparse
+import pandas as pd
 
 filtered_tags = [
     'script',
@@ -71,6 +72,21 @@ def dump_json_file(iocs : dict, url : str):
     iocs['scan'] = url 
     with open(fname, 'w') as f:
         f.write(json.dumps(iocs, indent=3))
+
+def dump_csv_file(iocs : dict):
+    filename = '{}-{}.csv'.format(str(uuid.uuid4()), str(datetime.date.today()))
+    fname = os.path.join(os.getcwd(), 'csv/', filename)
+    query_list = ['master_query: {}'.format(iocs['master_query'])]
+    for query_id in iocs['queries']:
+        query_list.append('{}: {}'.format(query_id, iocs['queries'][query_id]))
+    iocs.pop('queries')
+    iocs.pop('master_query')
+    iocs.pop('scan')
+    iocs['generated_queries'] = query_list
+    df = pd.DataFrame.from_dict(iocs, orient='index')
+    df = df.transpose()
+    df.to_csv(fname)
+
 
 def scan_webpage(page_content : str):
     '''
@@ -197,7 +213,7 @@ def ioc_extraction(page_content : str, req_url : str):
         # cleanup broken IPs
         if '[.]' in ipv4:
             ipv4 = re.sub('\[.\]', '.', ipv4)
-        if 'http' in ipv4:
+        if 'http' in ipv4 or 'ftp' or 'sftp':
             continue
         if ipv4 not in ioc_payload['ipv4']:
             #print(ipv4)
@@ -269,6 +285,7 @@ def fetch_url(url : str):
         print(json.dumps(iocs, indent=3))
         dump_txt_file(iocs, url)
         dump_json_file(iocs, url)
+        dump_csv_file(iocs)
     else:
         print('error processing request: {}'.format(url))
 
