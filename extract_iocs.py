@@ -10,6 +10,11 @@ import os
 from urllib.parse import urlparse
 import pandas as pd
 
+MD5CHAR = 32
+SHA1CHAR = 40
+SHA256CHAR = 64
+SHA512CHAR = 128
+
 filtered_tags = [
     'script',
     'meta',
@@ -167,14 +172,16 @@ def ioc_extraction(page_content : str, req_url : str):
     domain_0 = ''
     domain_1 = ''
     # Attempt to filter out noise of links from the same domain requested
-    if 'https' in req_url:
+    if 'https' in req_url and not re.search("\d{1,3}.{\d{1,3}.\d{1,3}.\d{1,3}", req_url):
         split_url = req_url.replace('https://', '').split('.')
         domain_0 = split_url[0]
         domain_1 = split_url[1]
-    elif 'http' in req_url:
+    elif 'http' in req_url and not re.search("\d{1,3}.{\d{1,3}.\d{1,3}.\d{1,3}", req_url):
         split_url = req_url.replace('http://', '').split('.')
         domain_0 = split_url[0]
         domain_1 = split_url[1]
+    if re.search("\d{1,3}.{\d{1,3}.\d{1,3}.\d{1,3}", req_url):
+        domain_0 = urlparse(req_url).netloc
 
 
     ioc_payload = {
@@ -190,10 +197,10 @@ def ioc_extraction(page_content : str, req_url : str):
     for url in iocextract.extract_urls(page_content):
         # re.match / search to filter out url noise from request domain
         if re.match(urlparse(req_url).netloc, urlparse(url).netloc):
-            print("Found a match, skipping")
+            #print("Found a match, skipping")
             continue
         if re.search(urlparse(req_url).netloc, urlparse(url).netloc):
-            print("Found a matching search, skipping")
+            #print("Found a matching search, skipping")
             continue
         if re.search(domain_0, url):
             continue
@@ -225,24 +232,52 @@ def ioc_extraction(page_content : str, req_url : str):
             ioc_payload['ipv6'].append(ipv6)
     '''
     for md5 in iocextract.extract_md5_hashes(page_content):
-        if md5 not in ioc_payload['md5']:
+        if md5 not in ioc_payload['md5'] and len(md5) == MD5CHAR:
             #print(md5)
-            ioc_payload['md5'].append(md5)
+            ioc_payload['md5'].append(md5.lower())
+        else:
+            if len(md5) == SHA1CHAR and md5 not in ioc_payload['sha1']:
+                ioc_payload['sha1'].append(md5.lower())
+            elif len(md5) == SHA256CHAR and md5 not in ioc_payload['sha256']:
+                ioc_payload['sha256'].append(md5.lower())
+            elif len(md5) == SHA512CHAR and md5 not in ioc_payload['sha512']:
+                ioc_payload['sha512'].append(md5.lower())
 
     for sha1 in iocextract.extract_sha1_hashes(page_content):
-        if sha1 not in ioc_payload['sha1']:
+        if sha1 not in ioc_payload['sha1'] and len(sha1) == SHA1CHAR:
             #print(sha1)
-            ioc_payload['sha1'].append(sha1)
+            ioc_payload['sha1'].append(sha1.lower())
+        else:
+            if len(sha1) == MD5CHAR and sha1 not in ioc_payload['md5']:
+                ioc_payload['md5'].append(sha1.lower())
+            elif len(sha1) == SHA256CHAR and sha1 not in ioc_payload['sha256']:
+                ioc_payload['sha256'].append(sha1.lower())
+            elif len(sha1) == SHA512CHAR and sha1 not in ioc_payload['sha512']:
+                ioc_payload['sha512'].append(sha1.lower())
 
     for sha256 in iocextract.extract_sha256_hashes(page_content):
-        if sha256 not in ioc_payload['sha256']:
+        if sha256 not in ioc_payload['sha256'] and len(sha256) == SHA256CHAR:
             #print(sha256)
-            ioc_payload['sha256'].append(sha256)
+            ioc_payload['sha256'].append(sha256.lower())
+        else:
+            if len(sha256) == MD5CHAR and sha256 not in ioc_payload['md5']:
+                ioc_payload['md5'].append(sha256.lower())
+            elif len(sha256) == SHA1CHAR and sha256 not in ioc_payload['sha1']:
+                ioc_payload['sha1'].append(sha256.lower())
+            elif len(sha256) == SHA512CHAR and sha256 not in ioc_payload['sha512']:
+                ioc_payload['sha512'].append(sha256.lower())
 
     for sha512 in iocextract.extract_sha512_hashes(page_content):
-        if sha512 not in ioc_payload['sha512']:
+        if sha512 not in ioc_payload['sha512'] and len(sha512) == SHA512CHAR:
             #print(sha512)
-            ioc_payload['sha512'].append(sha512)
+            ioc_payload['sha512'].append(sha512.lower())
+        else:
+            if len(sha512) == MD5CHAR and sha512 not in ioc_payload['md5']:
+                ioc_payload['md5'].append(sha512.lower())
+            elif len(sha512) == SHA1CHAR and sha512 not in ioc_payload['sha1']:
+                ioc_payload['sha1'].append(sha512.lower())
+            elif len(sha512) == SHA256CHAR and sha512 not in ioc_payload['sha256']:
+                ioc_payload['sha256'].append(sha512.lower())
 
     for email in iocextract.extract_emails(page_content):
         # cleanup broken emails
